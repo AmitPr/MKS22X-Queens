@@ -1,18 +1,13 @@
-public class QueenBoard {
-	// Temp Driver method
-	public static void main(String[] args) {
-		QueenBoard qb = new QueenBoard(8);
-		qb.solve();
-		System.out.println(qb.toString() + "\n");
-	}
+import java.util.concurrent.atomic.AtomicInteger;
 
+public class QueenBoard {
 	private int[][] board;
 	private int size = 0;
 
 	/*
 	 * Constructor
 	 */
-	public Main(int size) {
+	public QueenBoard(int size) {
 		this.size = size;
 		board = new int[size][size];
 		for (int i = 0; i < size; i++) {
@@ -50,7 +45,7 @@ public class QueenBoard {
 						board[col][row] += 1;
 					}
 				}
-				if (row2 < size && row2 > 0) {
+				if (row2 < size && row2 >= 0) {
 					if (board[i][row2] != -1) {
 						board[i][row2] += 1;
 					}
@@ -65,7 +60,7 @@ public class QueenBoard {
 	 * Removes a queen if there is one at the location specified.
 	 */
 	public void removeQueen(int r, int c) {
-		if (board[r][c] == -1) {
+		if (board[c][r] == -1) {
 			for (int i = 0; i < size; i++) {
 				if (board[c][i] != -1) {
 					board[c][i] -= 1;
@@ -86,7 +81,7 @@ public class QueenBoard {
 						board[col][row] -= 1;
 					}
 				}
-				if (row2 < size && row2 > 0) {
+				if (row2 < size && row2 >= 0) {
 					if (board[i][row2] != -1) {
 						board[i][row2] -= 1;
 					}
@@ -108,15 +103,33 @@ public class QueenBoard {
 	 * 
 	 */
 	public boolean solve() {
-		return helper(0, 0, false);
+		return helper(0, 0, false, new AtomicInteger(0));
 	}
 
-	private boolean helper(int curCol, int numQ, boolean allSolutions) {
+	/**
+	 * @return the number of solutions found, and leaves the board filled with
+	 *         only 0's
+	 * @throws IllegalStateException
+	 *             when the board starts with any non-zero value
+	 */
+	public int countSolutions() {
+		AtomicInteger ai = new AtomicInteger(0);
+		helper(0, 0, true, ai);
+		return ai.get();
+	}
+
+	private boolean helper(int curCol, int numQ, boolean allSolutions, AtomicInteger ai) {
 		if (curCol < size) {
 			for (int i = 0; i < size; i++) {
 				if (addQueen(i, curCol)) {
-					if (helper(curCol + 1, numQ + 1, allSolutions)) {
-						return true;
+					if (helper(curCol + 1, numQ + 1, allSolutions,ai)) {
+						if (allSolutions) {
+							ai.set(ai.get()+1);
+							removeQueen(i, curCol);
+							continue;
+						} else {
+							return true;
+						}
 					} else {
 						removeQueen(i, curCol);
 					}
@@ -150,12 +163,7 @@ public class QueenBoard {
 				if (board[i][j] == -1) {
 					b = b + "Q ";
 				} else {
-					/*
-					 * if (board[i][j] > 0) { b = b + board[i][j] + " "; } else
-					 * {
-					 */
 					b = b + "_ ";
-					// }
 				}
 			}
 			b += "\n";
