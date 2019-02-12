@@ -4,6 +4,15 @@ public class QueenBoard {
 	private int[][] board;
 	private int size = 0;
 
+	public static void main(String[] args) {
+		System.out.println("Start");
+		QueenBoard qb = new QueenBoard(14);
+		long l = System.nanoTime();
+		System.out.println(qb.countSolutions());
+		System.out.println((System.nanoTime() - l)/1000000000);
+		System.out.print(qb.toString());
+	}
+
 	/*
 	 * Constructor
 	 */
@@ -18,88 +27,51 @@ public class QueenBoard {
 	}
 
 	/*
-	 * Adds a queen to the board if it won't be threatened.
-	 * 
-	 * @return whether or not the queen was added.
+	 * Adds a queen to the board.
 	 */
-	public boolean addQueen(int r, int c) {
-		if (board[c][r] == 0) {
-			board[c][r] = -1;
-			for (int i = 0; i < size; i++) {
-				if (board[c][i] != -1) {
-					board[c][i] += 1;
-				}
+	public void addQueen(int r, int c) {
+		for (int i = 0; i < size; i++) {
+			board[c][i] += 1;
+			board[i][r] += 1;
+			int down=r-c+i;
+			int up=r+c-i;
+			if (down < size && down >= 0) {
+				board[i][down] += 1;
 			}
-			for (int i = 0; i < size; i++) {
-				if (board[i][r] != -1) {
-					board[i][r] += 1;
-				}
+			if (up < size && up >= 0) {
+				board[i][up] += 1;
 			}
-			int offset = c - r;
-			for (int i = 0; i < size; i++) {
-				int row = i + (offset < 0 ? offset * -1 : 0);
-				int col = i + (offset < 0 ? 0 : offset);
-				int row2 = (r + c - i);
-				if (row < size && col < size) {
-					if (board[col][row] != -1) {
-						board[col][row] += 1;
-					}
-				}
-				if (row2 < size && row2 >= 0) {
-					if (board[i][row2] != -1) {
-						board[i][row2] += 1;
-					}
-				}
-			}
-			return true;
 		}
-		return false;
+		board[c][r] = -1;
 	}
 
 	/*
 	 * Removes a queen if there is one at the location specified.
 	 */
 	public void removeQueen(int r, int c) {
-		if (board[c][r] == -1) {
-			for (int i = 0; i < size; i++) {
-				if (board[c][i] != -1) {
-					board[c][i] -= 1;
-				}
+		for (int i = 0; i < size; i++) {
+			board[c][i] -= 1;
+			board[i][r] -= 1;
+			int down=r-c+i;
+			int up=r+c-i;
+			if (down < size && down >= 0) {
+				board[i][down] -= 1;
 			}
-			for (int i = 0; i < size; i++) {
-				if (board[i][r] != -1) {
-					board[i][r] -= 1;
-				}
+			if (up < size && up >= 0) {
+				board[i][up] -= 1;
 			}
-			int offset = c - r;
-			for (int i = 0; i < size; i++) {
-				int row = i + (offset < 0 ? offset * -1 : 0);
-				int col = i + (offset < 0 ? 0 : offset);
-				int row2 = (r + c - i);
-				if (row < size && col < size) {
-					if (board[col][row] != -1) {
-						board[col][row] -= 1;
-					}
-				}
-				if (row2 < size && row2 >= 0) {
-					if (board[i][row2] != -1) {
-						board[i][row2] -= 1;
-					}
-				}
-			}
-			board[c][r] = 0;
 		}
+		board[c][r] = 0;
 	}
 
 	/**
 	 * @return false when the board is not solveable and leaves the board filled
 	 *         with zeros;
 	 * 
-	 *         true when the board is solveable, and leaves the board in a
-	 *         solved state
+	 *         true when the board is solveable, and leaves the board in a solved
+	 *         state
 	 * 
-	 * @throws IllegalStateException
-	 *             when the board starts with any non-zero value
+	 * @throws IllegalStateException when the board starts with any non-zero value
 	 * 
 	 */
 	public boolean solve() {
@@ -107,10 +79,9 @@ public class QueenBoard {
 	}
 
 	/**
-	 * @return the number of solutions found, and leaves the board filled with
-	 *         only 0's
-	 * @throws IllegalStateException
-	 *             when the board starts with any non-zero value
+	 * @return the number of solutions found, and leaves the board filled with only
+	 *         0's
+	 * @throws IllegalStateException when the board starts with any non-zero value
 	 */
 	public int countSolutions() {
 		AtomicInteger ai = new AtomicInteger(0);
@@ -121,20 +92,16 @@ public class QueenBoard {
 	private boolean helper(int curCol, int numQ, boolean allSolutions, AtomicInteger ai) {
 		if (curCol < size) {
 			for (int i = 0; i < size; i++) {
-				if (addQueen(i, curCol)) {
-					if (helper(curCol + 1, numQ + 1, allSolutions,ai)) {
+				if (board[curCol][i] == 0) {
+					addQueen(i, curCol);
+					if (helper(curCol + 1, numQ + 1, allSolutions, ai)) {
 						if (allSolutions) {
-							ai.set(ai.get()+1);
-							removeQueen(i, curCol);
-							continue;
+							ai.set(ai.get() + 1);
 						} else {
 							return true;
 						}
-					} else {
-						removeQueen(i, curCol);
 					}
-				} else {
-					continue;
+					removeQueen(i, curCol);
 				}
 			}
 			return false;
@@ -146,10 +113,9 @@ public class QueenBoard {
 	}
 
 	/**
-	 * @return The output string formatted as follows: All numbers that
-	 *         represent queens are replaced with 'Q' all others are displayed
-	 *         as underscores '_' There are spaces between each symbol: """_ _ Q
-	 *         _ Q _ _ _
+	 * @return The output string formatted as follows: All numbers that represent
+	 *         queens are replaced with 'Q' all others are displayed as underscores
+	 *         '_' There are spaces between each symbol: """_ _ Q _ Q _ _ _
 	 * 
 	 *         _ _ _ Q
 	 * 
@@ -163,7 +129,7 @@ public class QueenBoard {
 				if (board[i][j] == -1) {
 					b = b + "Q ";
 				} else {
-					b = b + "_ ";
+					b = b + board[i][j] + " ";
 				}
 			}
 			b += "\n";
