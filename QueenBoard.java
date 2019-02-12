@@ -2,16 +2,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class QueenBoard {
 	private int[][] board;
+	//The danger determining matrix -- twice as effecient as before!
+	private boolean[] occupiedRow;
+	private boolean[] occupiedDiagUp;
+	private boolean[] occupiedDiagDown;
 	private int size = 0;
-
-	public static void main(String[] args) {
-		System.out.println("Start");
-		QueenBoard qb = new QueenBoard(14);
-		long l = System.nanoTime();
-		System.out.println(qb.countSolutions());
-		System.out.println((System.nanoTime() - l)/1000000000);
-		System.out.print(qb.toString());
-	}
 
 	/*
 	 * Constructor
@@ -19,6 +14,9 @@ public class QueenBoard {
 	public QueenBoard(int size) {
 		this.size = size;
 		board = new int[size][size];
+		occupiedRow = new boolean[size];
+		occupiedDiagUp = new boolean[size + size];
+		occupiedDiagDown = new boolean[size + size];
 		for (int i = 0; i < size; i++) {
 			for (int j = 0; j < size; j++) {
 				board[i][j] = 0;
@@ -30,40 +28,24 @@ public class QueenBoard {
 	 * Adds a queen to the board.
 	 */
 	public void addQueen(int r, int c) {
-		for (int i = 0; i < size; i++) {
-			board[c][i] += 1;
-			board[i][r] += 1;
-			int down=r-c+i;
-			int up=r+c-i;
-			if (down < size && down >= 0) {
-				board[i][down] += 1;
-			}
-			if (up < size && up >= 0) {
-				board[i][up] += 1;
-			}
-		}
 		board[c][r] = -1;
+		occupiedRow[r]=true;
+		occupiedDiagDown[c-r+size]=true;
+		occupiedDiagUp[(2*size)-c-r-1]=true;
 	}
 
 	/*
 	 * Removes a queen if there is one at the location specified.
 	 */
 	public void removeQueen(int r, int c) {
-		for (int i = 0; i < size; i++) {
-			board[c][i] -= 1;
-			board[i][r] -= 1;
-			int down=r-c+i;
-			int up=r+c-i;
-			if (down < size && down >= 0) {
-				board[i][down] -= 1;
-			}
-			if (up < size && up >= 0) {
-				board[i][up] -= 1;
-			}
-		}
 		board[c][r] = 0;
+		occupiedRow[r]=false;
+		occupiedDiagDown[c-r+size]=false;
+		occupiedDiagUp[(2*size)-c-r-1]=false;
 	}
-
+	private boolean canPut(int r, int c){
+		return !(occupiedRow[r]||occupiedDiagUp[(2*size)-c-r-1]||occupiedDiagDown[c-r+size]);
+	}
 	/**
 	 * @return false when the board is not solveable and leaves the board filled
 	 *         with zeros;
@@ -91,8 +73,8 @@ public class QueenBoard {
 
 	private boolean helper(int curCol, int numQ, boolean allSolutions, AtomicInteger ai) {
 		if (curCol < size) {
-			for (int i = 0; i < size; i++) {
-				if (board[curCol][i] == 0) {
+			for (int i = 0; i < size; i++) {	
+				if (canPut(i, curCol)){
 					addQueen(i, curCol);
 					if (helper(curCol + 1, numQ + 1, allSolutions, ai)) {
 						if (allSolutions) {
@@ -129,7 +111,7 @@ public class QueenBoard {
 				if (board[i][j] == -1) {
 					b = b + "Q ";
 				} else {
-					b = b + board[i][j] + " ";
+					b = b + "_ ";
 				}
 			}
 			b += "\n";
