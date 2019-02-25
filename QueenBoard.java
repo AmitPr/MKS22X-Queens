@@ -1,23 +1,24 @@
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
 
 public class QueenBoard {
 	private int[][] board;
-	//The danger determining matrix -- twice as effecient as before!
-	private boolean[] occupiedRow;
+	// The danger determining matrix -- twice as effecient as before!
+	private ArrayList<Boolean> occupiedRow;
 	private boolean[] occupiedDiagUp;
 	private boolean[] occupiedDiagDown;
 	private int size = 0;
-
 	/*
 	 * Constructor
 	 */
 	public QueenBoard(int size) {
 		this.size = size;
 		board = new int[size][size];
-		occupiedRow = new boolean[size];
-		occupiedDiagUp = new boolean[size + size];
-		occupiedDiagDown = new boolean[size + size];
+		occupiedRow = new ArrayList<Boolean>();
+		occupiedDiagUp = new boolean[size * 2];
+		occupiedDiagDown = new boolean[size * 2];
 		for (int i = 0; i < size; i++) {
+			occupiedRow.add(i, false);
 			for (int j = 0; j < size; j++) {
 				board[i][j] = 0;
 			}
@@ -29,9 +30,9 @@ public class QueenBoard {
 	 */
 	public void addQueen(int r, int c) {
 		board[c][r] = -1;
-		occupiedRow[r]=true;
-		occupiedDiagDown[c-r+size]=true;
-		occupiedDiagUp[(2*size)-c-r-1]=true;
+		occupiedRow.set(r, true);
+		occupiedDiagDown[c - r + size] = true;
+		occupiedDiagUp[(2 * size) - c - r - 1] = true;
 	}
 
 	/*
@@ -39,13 +40,15 @@ public class QueenBoard {
 	 */
 	public void removeQueen(int r, int c) {
 		board[c][r] = 0;
-		occupiedRow[r]=false;
-		occupiedDiagDown[c-r+size]=false;
-		occupiedDiagUp[(2*size)-c-r-1]=false;
+		occupiedRow.set(r, false);
+		occupiedDiagDown[c - r + size] = false;
+		occupiedDiagUp[(2 * size) - c - r - 1] = false;
 	}
-	private boolean canPut(int r, int c){
-		return !(occupiedRow[r]||occupiedDiagUp[(2*size)-c-r-1]||occupiedDiagDown[c-r+size]);
+
+	private boolean canPut(int r, int c) {
+		return !(occupiedRow.get(r) || occupiedDiagUp[(2 * size) - c - r - 1] || occupiedDiagDown[c - r + size]);
 	}
+
 	/**
 	 * @return false when the board is not solveable and leaves the board filled
 	 *         with zeros;
@@ -73,8 +76,9 @@ public class QueenBoard {
 
 	private boolean helper(int curCol, int numQ, boolean allSolutions, AtomicInteger ai) {
 		if (curCol < size) {
-			for (int i = 0; i < size; i++) {	
-				if (canPut(i, curCol)){
+			int index = occupiedRow.indexOf(false);
+			for (int i = index; i < size; i++) {
+				if (canPut(i, curCol)) {
 					addQueen(i, curCol);
 					if (helper(curCol + 1, numQ + 1, allSolutions, ai)) {
 						if (allSolutions) {
